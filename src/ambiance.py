@@ -38,8 +38,11 @@ class ColorFrame:
     def capture_frame(self, scale_factor = 4):
         # Capture the frame in screen_raw and set the width and height
         self.screen_raw = ImageGrab.grab()
-        self.width, self.height = self.screen_raw.size
-        self.width, self.height = self.width // scale_factor, self.height // scale_factor
+        '''
+        self.width, self.height = (self.screen_raw.width, self.screen_raw.height)
+        self.width, self.height = (self.width // scale_factor, self.height // scale_factor)
+        '''
+        self.width, self.height = (self.hres, self.vres)
 
         # Convert the raw image to a rescaled version and create a numpy array from this
         self.screen = self.screen_raw.resize((self.width, self.height)).getdata()
@@ -76,22 +79,22 @@ class ColorFrame:
         plt.axis([0, self.hres - 1, 0, self.vres - 1])
         # Plot the top of the border
         plt.scatter(np.arange(self.hres),
-                    np.zeros(self.hres)*(self.hres - 1),
-                    c=self.border[0, : , : ]*(1/255))
+                    np.zeros(self.hres)+(self.vres - 1),
+                    c=self.border[0, : , : ]*(1/255), marker=',')
         # Plot the bottom of the border
         plt.scatter(np.arange(self.hres),
                     np.zeros(self.hres),
-                    c=self.border[self.vres - 1, : , : ]*(1/255))
+                    c=self.border[self.vres - 1, : , : ]*(1/255), marker=',')
         # Plot the left side of the border
         plt.scatter(np.zeros(self.vres),
                     np.arange(self.vres),
-                    c=self.border[ : , 0, : ]*(1/255))
+                    c=self.border[ : , 0, : ]*(1/255), marker=',')
         # Plot the right side of the border
-        plt.scatter(np.zeros(self.vres)*(self.vres - 1),
+        plt.scatter(np.zeros(self.vres)+(self.hres - 1),
                     np.arange(self.vres),
-                    c=self.border[ : , self.vres - 1, : ]*(1/255))
+                    c=self.border[ : , self.hres - 1, : ]*(1/255), marker=',')
         plt.show()
-
+        
     '''
     Returns a tuple representing the RGB value at the desired index
     @param x - The column value to retrieve the color from 
@@ -150,14 +153,13 @@ class ColorFrame:
 time = cv.getTickCount()
 
 frame = ColorFrame(16, 8)
-frame.capture_frame(1)
+frame.capture_frame(4)
 frame.generate_border()
 
 delta_t = (cv.getTickCount() - time) / cv.getTickFrequency()
 
 print(frame, "\n")
 frame.show_border()
-frame.show_capture()
 
 frame.print_border()
 print("Processing Time: ", delta_t , "seconds")
