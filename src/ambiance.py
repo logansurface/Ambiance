@@ -1,4 +1,4 @@
-from PIL import Image, ImageGrab
+from PIL import Image, ImageGrab, ImageFilter
 import cv2 as cv
 import numpy as np
 import matplotlib.pyplot as plt
@@ -38,7 +38,7 @@ class ColorFrame:
     '''
     def capture_frame(self):
         # Capture the frame in screen_raw
-        self.screen_raw = ImageGrab.grab()
+        self.screen_raw = ImageGrab.grab().filter(ImageFilter.GaussianBlur(2))
 
         # Convert the raw image to a rescaled version and create a numpy array from this
         self.screen = self.screen_raw.resize((self.hres, self.vres)).getdata()
@@ -66,6 +66,7 @@ class ColorFrame:
 
         # Set the drawing area to be hres x vres
         plt.axis([-1, self.hres, -1, self.vres])
+        plt.suptitle("Screen")
 
         # Plot the top of the border
         plt.scatter(np.arange(self.hres),
@@ -134,11 +135,34 @@ class ColorFrame:
         print("Generate the border using frame_obj.generate_border()\n")
         exit(-1)
 
-# Run on program start
+### Run on program start ###
+
+# Grab a tick reference for calculating runtime later
 time = cv.getTickCount()
 
-frame = ColorFrame(32, 16)
-#frame = ColorFrame(1920 // 4, 1080 // 4)
+# Some preliminary work on pulling the frames
+# from video data, instead of being limited to
+# a single still image
+'''
+im_stream = cv.VideoCapture(0)
+
+while True:
+    ret, cframe_r = im_stream.read()
+    cframe_p = cv.cvtColor(cframe_r, cv.COLOR_BGR2GRAY)
+
+    cv.imshow("Capture", cframe_p)
+
+    if cv.waitKey(1) & 0xFF == ord('q'):
+        break
+
+im_stream.release()
+cv.destroyAllWindows()
+'''
+
+frame = ColorFrame(32, 18)   # Frame generated for 30 lpm strip
+#frame = ColorFrame(64, 36)  # Frame generated for 60 lpm strip
+#frame = ColorFrame(158, 86) # Frame generated for 144 lpm strip
+
 frame.capture_frame()
 frame.generate_border()
 
