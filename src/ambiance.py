@@ -38,7 +38,7 @@ class ColorFrame:
     '''
     def capture_frame(self):
         # Capture the frame in screen_raw
-        self.screen_raw = ImageGrab.grab().filter(ImageFilter.GaussianBlur(2))
+        self.screen_raw = ImageGrab.grab()
 
         # Convert the raw image to a rescaled version and create a numpy array from this
         self.screen = self.screen_raw.resize((self.hres, self.vres)).getdata()
@@ -90,22 +90,25 @@ class ColorFrame:
                     marker=',')
 
         plt.show()
-        
-    '''
-    Returns a tuple representing the RGB value at the desired index
-    @param x - The column value to retrieve the color from 
-    @param y - The row value to retrieve the color from
-    '''
-    def get_border_color(self, x, y):
-        if self.border is False:
-            self.throw_not_processed()
-        
-        # The colors that were captured by OpenCV are stored as BGR
-        # We want to convert this to an RGB colorspace
-        bgr = self.border[y, x, : ]
 
-        # Return the rotated color values
-        return (bgr[2], bgr[1], bgr[0])
+    '''
+    Return the border, resized in the x and y by a factor provided.
+    This is helpful for displaying the frame's colors in OpenCV's imshow()
+
+    Example:
+    border.shape = (32, 18, 3) -> scale_border(2) -> border.shape = (64, 36, 3)
+    '''
+    def scale_border(self, factor):
+        border_sc = np.zeros((self.vres*factor, self.hres*factor, self.screen.shape[2]), dtype=np.uint)
+
+        i, j = 0
+        for y in np.arange(0, self.vres - 2, factor):
+            for x in np.arange(0, self.hres - 2, factor):
+                border_sc[y:y+factor, x:x+factor,...] = self.border[i][j]
+                j = j + 1
+            i = i + 1 
+
+        return border_sc
         
     '''
     Print out the ColorFrame in a human readable form 
@@ -136,42 +139,20 @@ class ColorFrame:
         exit(-1)
 
 ### Run on program start ###
-
-# Grab a tick reference for calculating runtime later
 time = cv.getTickCount()
-
-# Some preliminary work on pulling the frames
-# from video data, instead of being limited to
-# a single still image
-'''
-im_stream = cv.VideoCapture(0)
-
-while True:
-    ret, cframe_r = im_stream.read()
-    cframe_p = cv.cvtColor(cframe_r, cv.COLOR_BGR2GRAY)
-
-    cv.imshow("Capture", cframe_p)
-
-    if cv.waitKey(1) & 0xFF == ord('q'):
-        break
-
-im_stream.release()
-cv.destroyAllWindows()
-'''
 
 frame = ColorFrame(32, 18)   # Frame generated for 30 lpm strip
 #frame = ColorFrame(64, 36)  # Frame generated for 60 lpm strip
 #frame = ColorFrame(158, 86) # Frame generated for 144 lpm strip
 
-frame.capture_frame()
-frame.generate_border()
+# Proc. loop, capture frames until interupt
+while True:
+    frame.capture_frame()
+    frame.generate_border()
 
-delta_t = (cv.getTickCount() - time) / cv.getTickFrequency()
+    cv.imshow("capture", frame.scale_border(5))
 
-print(frame, "\n")
-frame.show_border()
+    delta_t = (cv.getTickCount() - time) / cv.getTickFrequency()
+    time = cv.getTickCount()
 
-print("Processing Time: ", delta_t , "seconds")
-print("Frame Rate: ", round(1 / delta_t), "frames per second")
-print("Storage Type: ", frame.border.dtype)
-print("-"*35 + "\n\n")
+    print("Frame Rate: ", round(1 / delta_t), "frames per second")
