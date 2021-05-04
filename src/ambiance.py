@@ -1,9 +1,10 @@
-from PIL import Image, ImageGrab, ImageFilter
+from PIL import Image, ImageGrab
 import cv2 as cv
 import numpy as np
 import matplotlib.pyplot as plt
 
 import serial
+import time as systime
 
 '''
 A class for holding an array of color values, generated from the outer edges of an image
@@ -56,6 +57,8 @@ class ColorFrame:
         for y in range(self.vres):
             for x in range(self.hres):
                 self.border[y][x] = self.screen[(y, x)] 
+
+        return self.border
         
     '''
     Displays a graphical representation of the border using MatPlotLib
@@ -101,7 +104,7 @@ class ColorFrame:
     def scale_border(self, factor):
         border_sc = np.zeros((self.vres*factor, self.hres*factor, self.screen.shape[2]), dtype=np.uint)
 
-        i, j = 0
+        i, j = (0, 0)
         for y in np.arange(0, self.vres - 2, factor):
             for x in np.arange(0, self.hres - 2, factor):
                 border_sc[y:y+factor, x:x+factor,...] = self.border[i][j]
@@ -138,21 +141,47 @@ class ColorFrame:
         print("Generate the border using frame_obj.generate_border()\n")
         exit(-1)
 
-### Run on program start ###
-time = cv.getTickCount()
+class Arduino:
+    '''
+    Constructor for the Arduino object
+    @param port - The serial port the arduino is connected to (/dev/tty# or COM<#>)
+    @param baud - The baud rate of the device's serial port (communication speed)
+    '''
+    def __init__(self, port, baud):
+        self.port = port
+        self.baud = baud
+        self.txrx = serial.Serial(port=port, baudrate=baud, timeout=0.1)
 
-frame = ColorFrame(32, 18)   # Frame generated for 30 lpm strip
-#frame = ColorFrame(64, 36)  # Frame generated for 60 lpm strip
-#frame = ColorFrame(158, 86) # Frame generated for 144 lpm strip
+    def __str__(self):
+        obj_str = f"\n<Arduino Object @ {hex(id(self))}>\n"
+        obj_str += "-"*35 + "\n"
+        obj_str += f"Port: {self.port}\n"
+        obj_str += f"Baud Rate: {self.baud}\n"
 
-# Proc. loop, capture frames until interupt
-while True:
-    frame.capture_frame()
-    frame.generate_border()
+        return obj_str
+    
+    def send(self, data):
+        self.txrx.write(packet)
+        time.sleep(0.1)
 
-    cv.imshow("capture", frame.scale_border(5))
+if __name__ == "__main__":
+    micro = Arduino('COM3', 115200)
 
-    delta_t = (cv.getTickCount() - time) / cv.getTickFrequency()
-    time = cv.getTickCount()
+    frame = ColorFrame(32, 18)   # Frame generated for 30 lpm strip
+    #frame = ColorFrame(64, 36)  # Frame generated for 60 lpm strip
+    #frame = ColorFrame(158, 86) # Frame generated for 144 lpm strip
 
-    print("Frame Rate: ", round(1 / delta_t), "frames per second")
+
+    # Proc. loop, capture frames until interupt
+    while True:
+        tick = cv.getTickCount()     # Tick ref. for calculating runtime
+        frame.capture_frame()
+
+        packet = frame.generate_border().flatten()
+        micro.send(packet)
+
+        #cv.imshow("capture", frame.scale_border(5))
+
+        delta_t = (cv.getTickCount() - tick) / cv.getTickFrequency()
+
+        print("Frame Rate: ", round(1 / delta_t), "frames per second")
