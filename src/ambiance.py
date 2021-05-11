@@ -1,16 +1,19 @@
 from PIL import Image, ImageGrab
 import cv2 as cv
 import numpy as np
+
 import matplotlib.pyplot as plt
+import tkinter as tk
 
 import serial
-import time as systime
 
 '''
-A class for holding an array of color values, generated from the outer edges of an image
+A class for holding NxM RGB values, generated from the outer edges of an image,
+where N is a specified sample size for the width of the image and M is the
+sample size for the height of an image.
 '''
 class ColorFrame:
-    border = False
+    border_generated = False
 
     '''
     Constructor for the ColorFrame
@@ -28,10 +31,10 @@ class ColorFrame:
         obj_str += f"Color Channels: {self.screen.shape[2]}\n"
 
         # Append the border to string, if it's been generated
-        if not self.border is False:
-            obj_str += f"Border Shape: {self.border.shape}\n"
+        if not self.border_generated is False:
+            obj_str += f"Border Shape: {self.hres}x{self.vres}\n"
 
-        return obj_str 
+        return obj_str
 
     '''
     Capture the screen and downscale it to avg. colors
@@ -45,26 +48,30 @@ class ColorFrame:
         self.screen = self.screen_raw.resize((self.hres, self.vres)).getdata()
         self.screen = np.array(self.screen, dtype=np.uint8).reshape(self.vres, self.hres, 3)
 
-    '''
-    Calculates the average color of the pixels within bounding boxes, specified by the
-    screen dimensions and the resolution of the frame.
+    ''' 
+    Grabs the edge pixels from the downsampled capture
     '''
     def generate_border(self):
-        # Initialize a numpy list with size col:vres x row:hres x depth:3
-        # This list represents an RGB led array with a user specified resolution
-        self.border = np.empty((self.vres, self.hres, 3), dtype=np.uint8)
+        self.left = np.empty((self.vres, 1, 3), dtype=np.uint8)
+        self.right = np.empty((self.vres, 1, 3), dtype=np.uint8)
+        self.top = np.empty((1, self.hres, 3), dtype=np.uint8)
+        self.bottom = np.empty((1, self.hres, 3), dtype=np.uint8)
 
         for y in range(self.vres):
-            for x in range(self.hres):
-                self.border[y][x] = self.screen[(y, x)] 
+            self.left[y] = self.screen[y, 0]
+            self.right[y] = self.screen[y, self.hres - 1]
 
-        return self.border
+        for x in range(self.hres):
+            self.top[0, x] = self.screen[0, x]
+            self.bottom[0, x] = self.screen[self.vres - 1, x]
+
+        self.border_generated = True
         
     '''
     Displays a graphical representation of the border using MatPlotLib
     '''
     def show_border(self):
-        if self.border is False:
+        if self.border_generated is False:
             self.throw_not_processed()
 
         # Set the drawing area to be hres x vres
@@ -74,22 +81,22 @@ class ColorFrame:
         # Plot the top of the border
         plt.scatter(np.arange(self.hres),
                     np.zeros(self.hres)+(self.vres - 1),
-                    c=self.border[0, : , : ]*(1/255),
+                    c=self.top[...]*(1/255),
                     marker=',')
         # Plot the bottom of the border
         plt.scatter(np.arange(self.hres),
                     np.zeros(self.hres),
-                    c=self.border[self.vres - 1, : , : ]*(1/255),
+                    c=self.bottom[...]*(1/255),
                     marker=',')
         # Plot the left side of the border
         plt.scatter(np.zeros(self.vres),
                     np.arange(self.vres),
-                    c=self.border[ : , 0, : ]*(1/255),
+                    c=self.left[...]*(1/255),
                     marker=',')
         # Plot the right side of the border
         plt.scatter(np.zeros(self.vres)+(self.hres - 1),
                     np.arange(self.vres),
-                    c=self.border[ : , self.hres - 1, : ]*(1/255),
+                    c=self.right[...]*(1/255),
                     marker=',')
 
         plt.show()
@@ -100,9 +107,11 @@ class ColorFrame:
 
     Example:
     border.shape = (32, 18, 3) -> scale_border(2) -> border.shape = (64, 36, 3)
-    '''
     def scale_border(self, factor):
-        border_sc = np.zeros((self.vres*factor, self.hres*factor, self.screen.shape[2]), dtype=np.uint)
+        border_sc = np.zeros((self.vres*factor,
+                              self.hres*factor,
+                              self.screen.shape[2]),
+                              dtype=np.uint8)
 
         i, j = (0, 0)
         for y in np.arange(0, self.vres - 2, factor):
@@ -112,18 +121,19 @@ class ColorFrame:
             i = i + 1 
 
         return border_sc
+    '''
         
     '''
-    Print out the ColorFrame in a human readable form 
+    Print out the borders 
     '''
     def print_border(self):
-        if self.border is False:
+        if self.border_generated is False:
             self.throw_not_processed()
 
-        print("Top:\n", self.border[0, ...], '\n')
-        print("Left:\n", self.border[1:self.vres - 1, 0, : ], '\n')
-        print("Right:\n", self.border[1:self.vres - 1, self.hres - 1, : ], '\n')
-        print("Bottom:\n", self.border[self.vres - 1, ...], '\n')
+        print("Top:\n", self.top, '\n')
+        print("Left:\n", self.left, '\n')
+        print("Right:\n", self.right, '\n')
+        print("Bottom:\n", self.bottom, '\n')
 
     '''
     Show the original capture, before processing was applied
@@ -150,7 +160,7 @@ class Arduino:
     def __init__(self, port, baud):
         self.port = port
         self.baud = baud
-        self.txrx = serial.Serial(port=port, baudrate=baud, timeout=0.1)
+        self.txrx = serial.Serial(port=port, baudrate=baud)
 
     def __str__(self):
         obj_str = f"\n<Arduino Object @ {hex(id(self))}>\n"
@@ -161,11 +171,13 @@ class Arduino:
         return obj_str
     
     def send(self, data):
-        self.txrx.write(packet)
-        time.sleep(0.1)
+        self.txrx.write(data)
+
+    def read(self):
+        return self.txrx.read()
 
 if __name__ == "__main__":
-    micro = Arduino('COM3', 115200)
+    #micro = Arduino('COM3', 115200)
 
     frame = ColorFrame(32, 18)   # Frame generated for 30 lpm strip
     #frame = ColorFrame(64, 36)  # Frame generated for 60 lpm strip
@@ -176,9 +188,11 @@ if __name__ == "__main__":
     while True:
         tick = cv.getTickCount()     # Tick ref. for calculating runtime
         frame.capture_frame()
+        frame.generate_border()
+        frame.show_border()
 
-        packet = frame.generate_border().flatten()
-        micro.send(packet)
+        #data = frame.generate_border().flatten()
+        #micro.send(packet)
 
         #cv.imshow("capture", frame.scale_border(5))
 
