@@ -6,7 +6,7 @@ from arduino import *
 
 if __name__ == "__main__":
     main_window = MainWindow("Ambiance v0.1") 
-    micro = Arduino('COM3', 115200)
+    #micro = Arduino('COM3', 115200)
 
     frame = ColorFrame(32, 18)   # Frame generated for 30 lpm strip
     #frame = ColorFrame(64, 36)  # Frame generated for 60 lpm strip
