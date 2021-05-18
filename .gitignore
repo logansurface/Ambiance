@@ -1,3 +1,6 @@
 launch.json
 workspace.code-workspace
 .vscode/settings.json
+src/__pycache__/interface.cpython-39.pyc
+src/__pycache__/colorframe.cpython-39.pyc
+src/__pycache__/arduino.cpython-39.pyc
