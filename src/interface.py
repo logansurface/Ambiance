@@ -69,4 +69,4 @@ class MainWindow:
         self.next_btn.grid(column=4, row=row, sticky=(E))
 
     def show(self):
-        self.root.mainloop()
+        self._root.mainloop()
