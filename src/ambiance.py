@@ -1,12 +1,17 @@
 import cv2 as cv
 
 from interface import MainWindow
-from colorframe import *
-from arduino import *
+from colorframe import ColorFrame
+from arduino import Arduino
 
 if __name__ == "__main__":
-    main_window = MainWindow("Ambiance v0.1") 
-    #micro = Arduino('COM3', 115200)
+    app_name = "Ambiance v0.1"
+    micro = Arduino('/dev/tty3', 115200)
+
+    if(micro.is_connected):
+        main_window = MainWindow(app_name, "CONNECTED", micro.port) 
+    else:
+        main_window = MainWindow(app_name, "NOT CONNECTED", "PORT")
 
     frame = ColorFrame(32, 18)   # Frame generated for 30 lpm strip
     #frame = ColorFrame(64, 36)  # Frame generated for 60 lpm strip

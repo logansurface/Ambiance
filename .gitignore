@@ -4,3 +4,7 @@ workspace.code-workspace
 src/__pycache__/interface.cpython-39.pyc
 src/__pycache__/colorframe.cpython-39.pyc
 src/__pycache__/arduino.cpython-39.pyc
+
+src/__pycache__/
+
+.vscode/.ropeproject/
