@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 
 class ColorFrame:
     '''
-    A class for holding NxM RGB values, generated from the outer edges of an image,
-    where N is a specified sample resolution for the width of the image and M is the
+    An object holding NxM RGB values, generated from the outer edges of an image.
+    Where N is a specified sample resolution for the width of the image and M is the
     sample resolution for the height of an image.
     '''
 
@@ -43,22 +43,23 @@ class ColorFrame:
     def generate_frame(self):
         ''' 
         Grab the edge pixels from the downsampled image
+        @returns an numpy.ndarray containing the frame in the order L, T, R, B 
         '''
-        self.left = np.empty((1, self.vres, 3), dtype=np.uint8)
-        self.right = np.empty((1, self.vres, 3), dtype=np.uint8)
-        self.top = np.empty((1, self.hres, 3), dtype=np.uint8)
-        self.bottom = np.empty((1, self.hres, 3), dtype=np.uint8)
+        self.left = np.empty((self.vres, 3), dtype=np.uint8)
+        self.right = np.empty((self.vres, 3), dtype=np.uint8)
+        self.top = np.empty((self.hres, 3), dtype=np.uint8)
+        self.bottom = np.empty((self.hres, 3), dtype=np.uint8)
 
         for y in range(self.vres):
-            self.left[0, y] = self.screen.getpixel((0, self.vres-y-1))
-            self.right[0, y] = self.screen.getpixel((self.vres-1, self.vres-y-1))
+            self.left[y] = self.screen.getpixel((0, self.vres-y-1))
+            self.right[y] = self.screen.getpixel((self.vres-1, self.vres-y-1))
 
         for x in range(self.hres):
-            self.top[0, x] = self.screen.getpixel((x, 0))
-            self.bottom[0, x] = self.screen.getpixel((x, self.vres-1))
+            self.top[x] = self.screen.getpixel((x, 0))
+            self.bottom[x] = self.screen.getpixel((x, self.vres-1))
 
         self.frame_generated = True
-        #return self.left + self.top + self.right + self.bottom
+        return np.concatenate((self.left, self.top, self.right, self.bottom))
  
     def plot_frame(self):
         '''
@@ -74,36 +75,24 @@ class ColorFrame:
         # Plot the right side of the frame 
         plt.scatter(np.zeros(self.vres-2)+(self.hres - 1),
                     np.arange(self.vres-2)+1,
-                    c=self.right[0, 1:self.vres-1, : ]*(1/255),
+                    c=self.right[1:self.vres-1, : ]*(1/255),
                     marker=',')
         # Plot the left side of the frame
         plt.scatter(np.zeros(self.vres-2),
                     np.arange(self.vres-2)+1,
-                    c=self.left[0, 1:self.vres-1, : ]*(1/255),
+                    c=self.left[1:self.vres-1, : ]*(1/255),
                     marker=',')
         # Plot the top of the frame
         plt.scatter(np.arange(self.hres),
                     np.zeros(self.hres)+(self.vres - 1),
-                    c=self.top[0,...]*(1/255),
+                    c=self.top[...]*(1/255),
                     marker=',')
         # Plot the bottom of the frame 
         plt.scatter(np.arange(self.hres),
                     np.zeros(self.hres),
-                    c=self.bottom[0,...]*(1/255),
+                    c=self.bottom[...]*(1/255),
                     marker=',')
         plt.show()
-        
-    def print_frame(self):
-        '''
-        Print out the frame with labels for each side
-        '''
-        if self.frame_generated is False:
-            self.throw_not_processed()
-
-        print("Top:\n", self.top, '\n')
-        print("Left:\n", self.left, '\n')
-        print("Right:\n", self.right, '\n')
-        print("Bottom:\n", self.bottom, '\n')
 
     def show_capture(self):
         '''
