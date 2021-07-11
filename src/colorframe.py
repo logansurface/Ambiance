@@ -43,7 +43,7 @@ class ColorFrame:
     def generate_frame(self):
         ''' 
         Grab the edge pixels from the downsampled image
-        @returns an numpy.ndarray containing the frame in the order L, T, R, B 
+        @returns a flattened numpy.ndarray containing the frame in the order L, T, R, B
         '''
         self.left = np.empty((self.vres, 3), dtype=np.uint8)
         self.right = np.empty((self.vres, 3), dtype=np.uint8)
@@ -103,8 +103,6 @@ class ColorFrame:
     def throw_not_processed(self):
         '''
         Throw when the current frame has not been processed
-        Displays an appropriate error message to the user
-        and terminates the program's execution
         '''
         print("Error, the current frame hasn't been generated yet.") 
         print("Generate the border using frame_obj.generate_frame()\n")
