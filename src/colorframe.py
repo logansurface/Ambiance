@@ -1,5 +1,6 @@
 from PIL import Image, ImageGrab
 
+import mss
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -37,8 +38,12 @@ class ColorFrame:
         Capture the screen and downscale it to avg. colors
         and reduce computational intensity
         '''
-        self.screen_raw = ImageGrab.grab()
-        self.screen = self.screen_raw.convert("RGB").resize((self.hres, self.vres), Image.NEAREST)
+        with mss.mss() as sct:
+            self.screen_raw = sct.grab(sct.monitors[1])
+            self.screen = Image.frombytes("RGB", self.screen_raw.size,
+                                          self.screen_raw.bgra, "raw", "BGRX")
+
+        self.screen = self.screen.resize((self.hres, self.vres), Image.NEAREST)
 
     def generate_frame(self):
         ''' 
