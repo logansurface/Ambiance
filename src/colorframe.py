@@ -27,7 +27,7 @@ class ColorFrame:
         obj_str += f"Color Channels: {self.screen.shape[2]}\n"
 
         # Append the border to string, if it's been generated
-        if not self.frame_generated is False:
+        if self.frame_generated is True:
             obj_str += f"Frame Shape: {self.hres}x{self.vres}\n"
 
         return obj_str
@@ -38,7 +38,7 @@ class ColorFrame:
         and reduce computational intensity
         '''
         self.screen_raw = ImageGrab.grab()
-        self.screen = self.screen_raw.resize((self.hres, self.vres), Image.NEAREST)
+        self.screen = self.screen_raw.convert("RGB").resize((self.hres, self.vres), Image.NEAREST)
 
     def generate_frame(self):
         ''' 

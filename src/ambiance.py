@@ -47,19 +47,14 @@ if __name__ == "__main__":
         print(str(err))
         exit(-1)
 
-    cframe = ColorFrame(x_res, y_res)
     micro = Arduino(port, baud)
     time.sleep(2)
 
-    '''
-    Attempt to establish a handshake with the MCU,
-    so that preliminary information may be sent
-    '''
     if micro.is_connected():
         handshake = micro.recieve()
         if handshake == 'R':
             print("Handshake established with microcontroller. Beginning data stream...")
-            micro.send((cframe.hres*2) + (cframe.vres*2))       # Send the bits per frame
+            micro.send("R")
         else:
             print("Handshake can not be established with microcontroller. Aborting...")
             exit(-1)
@@ -78,6 +73,8 @@ if __name__ == "__main__":
     main_window.show()
     '''
 
+    cframe = ColorFrame(x_res, y_res)
+
     # Proc. loop, capture frames until interupt
     while True:
         tick = cv.getTickCount()
@@ -86,9 +83,9 @@ if __name__ == "__main__":
         flattened_border = cframe.generate_frame()
 
         for pixel in flattened_border:
-            micro.send(pixel[0])    # Send R
-            micro.send(pixel[1])    # Send G
-            micro.send(pixel[2])    # Send B
+            micro.send(f"{pixel[0]} ")    # Send R
+            micro.send(f"{pixel[1]} ")    # Send G
+            micro.send(f"{pixel[2]} ")    # Send B
 
         delta_t = (cv.getTickCount() - tick) / cv.getTickFrequency()
         print("Frame Rate: ", round(1 / delta_t), "frames per second")

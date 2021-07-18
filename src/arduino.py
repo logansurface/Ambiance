@@ -35,12 +35,16 @@ class Arduino:
         '''
         return self._is_connected
 
-    def send(self, data):
+    def send(self, data: str):
         '''
         Write to the serial port's output stream
         @param data: string - data to write
         ''' 
-        self._txrx.write(data.encode("utf-8"))
+        try:
+            self._txrx.write(data.encode("utf-8"))
+        except AttributeError as err:
+            print(f"{data} is the wrong type. Try sending a string.")
+            exit(-1)
 
     def recieve(self):
         '''
