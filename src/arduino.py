@@ -31,7 +31,7 @@ class Arduino:
     def is_connected(self):
         '''
         Check the serial object to see if it has been opened properly
-        @return bool: True if serial is open, False if serial is closed
+        @returns bool: True if serial is open, False if serial is closed
         '''
         return self._is_connected
 
@@ -46,9 +46,26 @@ class Arduino:
             print(f"{data} is the wrong type. Try sending a string.")
             exit(-1)
 
-    def recieve(self):
+    def receive(self):
         '''
         Read from the serial port's output stream
         @return a decoded utf-8 string
         '''
         return self._txrx.read().decode("utf-8")
+    
+    def handshake(self, ready_flag: str):
+        '''
+        Establishes a connection with a compatible serial device
+        @param ready_flag: str - byte(s) indicating ready to connect
+        '''
+        if self.is_connected():
+            handshake = self.receive()
+            if handshake == 'R':
+                print("Handshake established with microcontroller. Beginning data stream...")
+                self.send("R")
+            else:
+                print("Handshake can not be established with microcontroller. Aborting...")
+                #exit(-1)
+        else:
+            print("Microcontroller not available on the specified port. Aborting...")
+            #exit(-1)

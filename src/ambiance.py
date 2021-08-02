@@ -28,8 +28,8 @@ if __name__ == "__main__":
         for current_arg, current_val in args:
             if current_arg in ("-h", "--help"):
                 print("usage: python3 ambiance.py [-h] -x -y -p -b")
-                print("\toptions:")
-                print("\t\t-h, --help: show this help dialog")
+                print("\toptions")    
+                print("\t\t-h, --help: show this dialog.")
                 print("\t\t-x, --x_res: number of leds across horizontal axis")
                 print("\t\t-y, --y_res: number of leds across vertical axis")
                 print("\t\t-p, --port: local dev. name of serial port [ex: COM3]")
@@ -49,18 +49,7 @@ if __name__ == "__main__":
 
     micro = Arduino(port, baud)
     time.sleep(2)
-
-    if micro.is_connected():
-        handshake = micro.recieve()
-        if handshake == 'R':
-            print("Handshake established with microcontroller. Beginning data stream...")
-            micro.send("R")
-        else:
-            print("Handshake can not be established with microcontroller. Aborting...")
-            exit(-1)
-    else:
-        print("Microcontroller not available on the specified port. Aborting...")
-        exit(-1)
+    micro.handshake('R')
 
     '''
     GUI Disabled (under development)
@@ -79,6 +68,11 @@ if __name__ == "__main__":
     while True:
         tick = cv.getTickCount()
 
+        # Ensure a valid connection exists
+        if micro.receive() == 'R':
+            micro.handshake('R')
+
+        # Capture frame and generate border pixels
         cframe.capture_frame()
         flattened_border = cframe.generate_frame()
 
