@@ -46,7 +46,7 @@ class Arduino:
             print(f"{data} is the wrong type. Try sending a string.")
             exit(-1)
 
-    def recieve(self):
+    def receive(self):
         '''
         Read from the serial port's output stream
         @return a decoded utf-8 string

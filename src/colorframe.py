@@ -43,7 +43,7 @@ class ColorFrame:
             self.screen = Image.frombytes("RGB", self.screen_raw.size,
                                           self.screen_raw.bgra, "raw", "BGRX")
 
-        self.screen = self.screen.resize((self.hres, self.vres), Image.NEAREST)
+        self.screen = self.screen.resize((self.hres, self.vres), Image.BOX)
 
     def generate_frame(self):
         ''' 
